@@ -74,38 +74,41 @@ fn function(x:&PrimeField, u:&FiniteField, char:&u8, length:&u8) ->PrimeField{
 	result
 	
 }
-/*
-fn encode(P:Vec<PrimeField>,origin_sentense:FiniteField)->FiniteField{
-	let mut result:Vec<PrimeField> = Vec::new();
-	for i in 0..origin_sentense.length{
-		result.push(P[i as usize].mul(&origin_sentense.elements[i as usize]));
+fn encode(P:Vec<PrimeField>,origin_sentense:FiniteField, char:&u8, length:&u8)->FiniteField{
+	let mut u = Vec::new();
+	for i in 0..char-1{
+		let mut temp = function(&P[i as usize], &origin_sentense, char, length);
+		u.push(temp);
 	}
-
+	FiniteField{char:*char,length:*length,elements:u}
 
 }
- */
 fn main() {
 	let char = 11;
 	let length = 5;
+	// 送りたい文章
 	let origin_sentense = FiniteField::new(char,length,
 										   vec![PrimeField::new(char,0),
 												PrimeField::new(char,1),
 												PrimeField::new(char,0),
 												PrimeField::new(char,0),
 												PrimeField::new(char,0)]);
+
 	let mut P = Vec::new();
 	// 原始根を作成
 	for i in 0..char-1{
 		P.push(PrimeField::new(char,2_i32.pow(i.into())));
 	}
 	P = FiniteField::new(char,length,P).elements;
+	// 符号化
+	let u = encode(P,origin_sentense,&char,&length);
 
-	let mut u = Vec::new();
+	let mut u_send = Vec::new();
 	for i in 0..char-1{
-		let mut temp = function(&P[i as usize], &origin_sentense, &char, &length);
-		u.push(temp);
+		u_send.push(u.elements[i as usize].num);
 	}
-	println!("{:?}",u);
+
+	println!("{:?}",u_send);
 
 
 }
