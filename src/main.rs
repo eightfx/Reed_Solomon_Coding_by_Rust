@@ -145,6 +145,51 @@ impl FiniteField {
     }
 }
 
+// 掃き出し法
+fn sweep_method(mut H:Vec<Vec<PrimeField>>) -> Vec<Vec<PrimeField>>{
+	let n = H.len();
+	let m = H[0].len();
+
+	// 復号行列を掃き出し法で変形
+    for i in 0..n - 1 {
+        // 0の場合は交換
+        for j in i..n {
+            if H[i as usize][i as usize].num != 0 {
+                break;
+            } else {
+                let tmp = H[i as usize].clone();
+                H[i as usize] = H[j as usize].clone();
+                H[j as usize] = tmp;
+            }
+        }
+        // 1になるように掛ける
+
+        let head = &H[i as usize][i as usize].clone();
+        for j in 0..m{
+            let h_ij = &H[i as usize][j as usize];
+            H[i as usize][j as usize] = h_ij.div(head);
+        }
+        let mut h_xi: Vec<PrimeField> = Vec::new();
+        for k in 0..n {
+            h_xi.push(H[k as usize][i as usize].clone());
+        }
+        // 0になるように引く
+        for j in 0..m{
+            // k列全ての値を取得する
+            let h_ij = &H[i as usize][j as usize].clone();
+            for k in 0..n {
+                if i == k {
+                    continue;
+                }
+
+                let h_kj = &H[k as usize][j as usize];
+                let h_ki = h_xi[k as usize].clone();
+                H[k as usize][j as usize] = h_kj.sub(&h_ki.mul(h_ij));
+            }
+        }
+    }
+	H
+}
 // u係数のx変数多項式
 fn function(x: &PrimeField, u: &FiniteField, char: &u16, length: &u16) -> PrimeField {
     let mut result = PrimeField {
@@ -275,44 +320,9 @@ fn main() {
         H.push(tmp);
     }
 
-    // 復号行列を掃き出し法で変形
-    for i in 0..n - 1 {
-        // 0の場合は交換
-        for j in i..n {
-            if H[i as usize][i as usize].num != 0 {
-                break;
-            } else {
-                let tmp = H[i as usize].clone();
-                H[i as usize] = H[j as usize].clone();
-                H[j as usize] = tmp;
-            }
-        }
-        // 1になるように掛ける
-
-        let head = &H[i as usize][i as usize].clone();
-        for j in 0..l_0 + l_1 + 2 {
-            let h_ij = &H[i as usize][j as usize];
-            H[i as usize][j as usize] = h_ij.div(head);
-        }
-        let mut h_xi: Vec<PrimeField> = Vec::new();
-        for k in 0..n {
-            h_xi.push(H[k as usize][i as usize].clone());
-        }
-        // 0になるように引く
-        for j in 0..l_0 + l_1 + 2 {
-            // k列全ての値を取得する
-            let h_ij = &H[i as usize][j as usize].clone();
-            for k in 0..n {
-                if i == k {
-                    continue;
-                }
-
-                let h_kj = &H[k as usize][j as usize];
-                let h_ki = h_xi[k as usize].clone();
-                H[k as usize][j as usize] = h_kj.sub(&h_ki.mul(h_ij));
-            }
-        }
-    }
+	// 掃き出し法
+	H = sweep_method(H);
+	
 
     // 行列のランク
     let mut rank = 0;
