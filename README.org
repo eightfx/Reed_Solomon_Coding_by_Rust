@@ -34,4 +34,9 @@ Reed-Solomon符号は、データの送受信時にエラーが発生した場�
 復号不可能
  #+end_src
 
+* 理論的背景
+
+$$ P \in {\alpha_1, \ldots, \alpha_n} \subset \mathbb{F}_q $$
+$$ L(m) : \mathbb{F}_qを係数とする最大m次の1変数多項式からなる線形空間 $$
+
 
