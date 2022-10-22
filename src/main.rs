@@ -1,3 +1,5 @@
+use rand::Rng;
+
 // 素体
 #[derive(Debug)]
 #[derive(Clone)]
@@ -247,6 +249,7 @@ fn main() {
 		let mut temp = H[i as usize][rank..].to_vec();
 		let mut answer = PrimeField::new(char,0);
 		for j in 0..temp.len(){
+
 			answer = answer.sub(&temp[j as usize].mul(&PrimeField::new(char,1)));
 		}
 		Q.push(answer);
@@ -283,12 +286,26 @@ fn main() {
 
 	let mut Q0 = FiniteField::new(char,length,Q0_temp);
 	let mut Q1 = FiniteField::new(char,length,Q_num[(l_0+1) as usize ..(l_0+l_1+2) as usize].to_vec().into_iter().rev().collect::<Vec<PrimeField>>());
+	// let mut Q0 = FiniteField::new(char,7,
+	// 							  vec![PrimeField::new(char,1),
+	// 							   PrimeField::new(char,9),
+	// 							   PrimeField::new(char,2),
+	// 								   PrimeField::new(char,2),
+	// 							   PrimeField::new(char,2),
+	// 							   PrimeField::new(char,1),
+	// 							   PrimeField::new(char,4)]);
+	// let mut Q1 = FiniteField::new(char,3,
+	// 							  vec![PrimeField::new(char,10),
+	// 								   PrimeField::new(char,3),
+	// 								   PrimeField::new(char,7)]);
+
+
 
 
 	// Q0をQ1で割った商を求める
 	let mut quotient:Vec<PrimeField> = Vec::new();
 
-	for i in 0..Q0.elements.len() - Q1.elements.len() + 1{
+	for i in 0..Q0.elements.len() - Q1.elements.len()+1{
 		let mut tmp = Q0.elements[i].div(&Q1.elements[0]);
 		for j in 0..Q1.elements.len(){
 			Q0.elements[i+j] = Q0.elements[i+j].sub(&Q1.elements[j].mul(&tmp));
@@ -303,13 +320,23 @@ fn main() {
 	}
 
 
+	// 逆順にする
+	let mut quotient = quotient.into_iter().rev().collect::<Vec<PrimeField>>();
+	let mut quotient:FiniteField = FiniteField::new(char,length,quotient);
+
+	let mut decode_code:Vec<PrimeField> = Vec::new();
+	for i in 0..n{
+		let mut tmp = function(&P[i as usize],&quotient,&char,&(quotient.elements.len() as u8));
+		decode_code.push(tmp);
+	}
+
 	
+	// 結果を表示
 	let Q0_num:Vec<u8> = Q0.toVec();
-	let quotient_num:Vec<u8> = quotient.iter().map(|x|x.num as u8).collect();
-	
+	let quotient_num:Vec<u8> = quotient.toVec();
+	let mut decode_code_num:Vec<u8> = decode_code.iter().map(|x|x.num as u8).collect();
 	println!("quotient:{:?}",quotient_num);
 	println!("remainder:{:?}",Q0_num);
-
-
+	println!("decode_code:{:?}",decode_code_num);
 }
 
