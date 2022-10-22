@@ -22,13 +22,46 @@ impl PrimeField{
 	fn mul(&self,other:&PrimeField)->PrimeField{
 		PrimeField{char:self.char,num:(self.num*other.num) %self.char as i32}
 	}
-	fn div(&self,other:&PrimeField)->PrimeField{
-		PrimeField{char:self.char,num:(self.num*other.num.pow(self.char as u32-2)) %self.char as i32}
-	}
 	fn pow(&self,other:i32)->PrimeField{
 		PrimeField{char:self.char,num:(self.num.pow(other as u32)) %self.char as i32}
 	}
-
+	fn div(&self,other:&PrimeField)->PrimeField{
+		let mut t = self.extended_euclidean((self.char as i32), other.num);
+		if t<0{
+			let mut i = 1;
+			
+			while (t+i*self.char as i32) < 0{
+				i += 1;
+			}
+			t = (t+i*self.char as i32) % self.char as i32;
+		}
+		PrimeField{char:self.char,num:(self.num*t) %self.char as i32}
+	}
+	fn extended_euclidean(&self,u: i32, v: i32) -> i32 {
+		let mut r0 = u;
+		let mut r1 = v;
+		let mut s0 = 1;
+		let mut s1 = 0;
+		let mut t0 = 0;
+		let mut t1 = 1;
+		while r1 != 0 {
+			let q = r0 / r1;
+			let r = r0 - q * r1;
+			let s = s0 - q * s1;
+			let t = t0 - q * t1;
+			r0 = r1;
+			s0 = s1;
+			t0 = t1;
+			r1 = r;
+			s1 = s;
+			t1 = t;
+		}
+		if t0 < 0 {
+			t0 + u
+		} else {
+			t0
+		}
+	}
 }
 
 // 素体の有限拡大体
@@ -118,7 +151,7 @@ fn main() {
 	let mut P = Vec::new();
 	// 原始根を１つ固定
 	let primitive_element:i32 = 2;
-	
+
 	// 原始根を生成
 	for i in 0..char-1{
 		P.push(PrimeField::new(char,primitive_element.pow(i.into())));
@@ -157,6 +190,42 @@ fn main() {
 		
 	}
 
+	// 復号行列を掃き出し法で変形
+	for i in 0..n{
+		// 0の場合はスキップ
+		if H[i as usize][i as usize].num == 0{
+			continue;
+		}
+
+		// 1になるように掛ける
+		for j in 0..l_0+l_1+2{
+
+			let mut head = &H[i as usize][i as usize];
+			let mut h_ij = &H[i as usize][j as usize];
+			H[i as usize][j as usize] = h_ij.div(&head);
+		}
+}
+
+	let H_num:Vec<Vec<i32>> = H.into_iter().map(|x|x.into_iter().map(|y|y.num).collect()).collect();
+	println!("H:{:?}",H_num);
+	//let mut h0 = &H[0][0];
+	//let mut h1 = &H[0][1];
+	//H[0][0] = h0.add(h1);
+	
+	
+	/*
+	for i in 0..n{
+	let mut head :&PrimeField = &H[i as usize][i as usize];
+		println!("head:{:?}",head);
+		for j in 0..n{
+			let mut tmp = &mut H[j as usize];
+			tmp[i as usize] = tmp[i as usize].div(&head);
+		}
+
+	}
+	 */
+
+	//println!("H:{:?}",H);
 	
 
 
