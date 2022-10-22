@@ -26,7 +26,7 @@ impl PrimeField{
 		PrimeField{char:self.char,num:(self.num.pow(other as u32)) %self.char as i32}
 	}
 	fn div(&self,other:&PrimeField)->PrimeField{
-		let mut t = self.extended_euclidean((self.char as i32), other.num);
+		let mut t = self.extended_euclidean(self.char as i32, other.num);
 		if t<0{
 			let mut i = 1;
 			
@@ -196,7 +196,6 @@ fn main() {
 		if H[i as usize][i as usize].num == 0{
 			continue;
 		}
-
 		// 1になるように掛ける
 		for j in 0..l_0+l_1+2{
 
@@ -204,9 +203,24 @@ fn main() {
 			let mut h_ij = &H[i as usize][j as usize];
 			H[i as usize][j as usize] = h_ij.div(&head);
 		}
-}
+		// 0になるように引く
+		for j in 0..l_0+l_1+2{
+			for k in 0..n{
+				if k == i{
+					continue;
+				}
+				let mut h_kj = &H[k as usize][j as usize];
+				let mut h_ki = &H[k as usize][i as usize];
+				let mut h_ij = &H[i as usize][j as usize];
+				H[k as usize][j as usize] = h_kj.sub(&h_ki.mul(&h_ij));
 
-	let H_num:Vec<Vec<i32>> = H.into_iter().map(|x|x.into_iter().map(|y|y.num).collect()).collect();
+				
+			}
+
+		}
+	}
+
+let H_num:Vec<Vec<i32>> = H.into_iter().map(|x|x.into_iter().map(|y|y.num).collect()).collect();
 	println!("H:{:?}",H_num);
 	//let mut h0 = &H[0][0];
 	//let mut h1 = &H[0][1];
