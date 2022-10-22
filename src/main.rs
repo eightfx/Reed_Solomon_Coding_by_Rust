@@ -254,7 +254,29 @@ fn main() {
 	let Q_num:Vec<PrimeField> = Q.iter().map(|x|PrimeField::new(char,x.num)).collect();
 
 	// 誤り位置多項式を求める
-	let Q0 = FiniteField::new(char,length,Q_num[0..(l_0+1) as usize].to_vec().into_iter().rev().collect::<Vec<PrimeField>>());
+
+	// 次数の調整
+	let mut Q0_temp = Q_num[0..(l_0+1) as usize].to_vec().into_iter().rev().collect::<Vec<PrimeField>>();
+	for i in 0..(l_0+1) as usize{
+		if Q0_temp[0].num == 0{
+			Q0_temp.remove(0);
+		}
+		else{
+			break;
+		}
+	}
+
+	let mut Q1_temp = Q_num[(l_0+1) as usize ..(l_0+l_1+2) as usize].to_vec().into_iter().rev().collect::<Vec<PrimeField>>();
+	for i in 0..(l_1+1) as usize{
+		if Q1_temp[0].num == 0{
+			Q1_temp.remove(0);
+		}
+		else{
+			break;
+		}
+	}
+
+	let Q0 = FiniteField::new(char,length,Q0_temp);
 	let Q1 = FiniteField::new(char,length,Q_num[(l_0+1) as usize ..(l_0+l_1+2) as usize].to_vec().into_iter().rev().collect::<Vec<PrimeField>>());
 	
 	
