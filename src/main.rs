@@ -9,7 +9,7 @@ impl PrimeField {
     fn new(char: u16, num: i64) -> PrimeField {
         let new_num = num % char as i64;
         PrimeField {
-            char: char,
+            char,
             num: new_num,
         }
     }
@@ -153,7 +153,7 @@ fn function(x: &PrimeField, u: &FiniteField, char: &u16, length: &u16) -> PrimeF
     };
     for i in 0..*length {
         let tmp = &x.pow(i.into()).mul(&u.elements[i as usize]);
-        result = result.add(&tmp);
+        result = result.add(tmp);
     }
     result
 }
@@ -236,7 +236,7 @@ fn main() {
     let error_count = rng.gen_range(1, 10);
     println!("エラーの数:{}", error_count);
 
-    for i in 0..error_count {
+    for _i in 0..error_count {
         let error_position = rng.gen_range(0, n);
         let error_value = rng.gen_range(0, char);
         u_received[error_position as usize] = error_value;
@@ -292,7 +292,7 @@ fn main() {
         let head = &H[i as usize][i as usize].clone();
         for j in 0..l_0 + l_1 + 2 {
             let h_ij = &H[i as usize][j as usize];
-            H[i as usize][j as usize] = h_ij.div(&head);
+            H[i as usize][j as usize] = h_ij.div(head);
         }
         let mut h_xi: Vec<PrimeField> = Vec::new();
         for k in 0..n {
@@ -309,7 +309,7 @@ fn main() {
 
                 let h_kj = &H[k as usize][j as usize];
                 let h_ki = h_xi[k as usize].clone();
-                H[k as usize][j as usize] = h_kj.sub(&h_ki.mul(&h_ij));
+                H[k as usize][j as usize] = h_kj.sub(&h_ki.mul(h_ij));
             }
         }
     }
