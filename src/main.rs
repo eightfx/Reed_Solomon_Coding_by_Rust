@@ -1,5 +1,4 @@
 use rand::Rng;
-
 // 素体
 #[derive(Debug)]
 #[derive(Clone)]
@@ -118,7 +117,7 @@ impl FiniteField{
 fn function(x:&PrimeField, u:&FiniteField, char:&u8, length:&u8) ->PrimeField{
 	let mut result = PrimeField{char:*char,num:0};
 	for i in 0..*length{
-		let mut tmp = &x.pow(i.into()).mul(&u.elements[i as usize]);
+		let tmp = &x.pow(i.into()).mul(&u.elements[i as usize]);
 		result = result.add(&tmp);
 
 	}
@@ -128,14 +127,27 @@ fn function(x:&PrimeField, u:&FiniteField, char:&u8, length:&u8) ->PrimeField{
 fn encode(P:&Vec<PrimeField>,origin_sentense:FiniteField, char:&u8, length:&u8)->FiniteField{
 	let mut u = Vec::new();
 	for i in 0..char-1{
-		let mut temp = function(&P[i as usize], &origin_sentense, char, length);
+		let temp = function(&P[i as usize], &origin_sentense, char, length);
 		u.push(temp);
 	}
 	FiniteField{char:*char,length:*length,elements:u}
 
 }
+
+fn matrix_visualize(matrix:&Vec<Vec<PrimeField>>,n:&u8, l_0:&u8,l_1:&u8)->Vec<Vec<i32>>{
+	let mut h_num:Vec<Vec<i32>> = Vec::new();
+	for i in 0..*n{
+		let mut tmp:Vec<i32> = Vec::new();
+		for j in 0..l_0+l_1+2{
+			tmp.push(matrix[i as usize][j as usize].num);
+		}
+		h_num.push(tmp);
+	}
+	h_num
+}
+
 fn main() {
-	let char = 11; // n+1
+	let char = 13; // n+1
 	let length =5;
 
 	let n = &char-1; // 符号込の長さ
@@ -145,20 +157,21 @@ fn main() {
 	
 	let l_0 = &n - 1 - &t;
 	let l_1 = &n - 1 - &t - (k - 1);
-	println!("n:{},k:{},d:{},t:{},l_0:{},l_1:{}",n,k,d,t,l_0,l_1);
+	println!("[{},{},{}]-code",n,k,d,);
 
 	// 送りたい文章
-	let origin_sentense = FiniteField::new(char,length,
-										   vec![PrimeField::new(char,0),
-												PrimeField::new(char,1),
-												PrimeField::new(char,0),
-												PrimeField::new(char,0),
-												PrimeField::new(char,0)]);
+		let origin_sentense = FiniteField::new(char,length,
+											   vec![PrimeField::new(char,0),
+													PrimeField::new(char,0),
+													PrimeField::new(char,0),
+													PrimeField::new(char,0),
+													PrimeField::new(char,1)]);
+	println!("送信したい文章: {:?}",origin_sentense.toVec());
 
 
 	let mut P = Vec::new();
 	// 原始根を１つ固定
-	let primitive_element:i32 = 2;
+	let primitive_element:i32 = 3;
 
 	// 原始根を生成
 	for i in 0..char-1{
@@ -167,20 +180,24 @@ fn main() {
 	P = FiniteField::new(char,length,P).elements;
 	// 符号化
 	let u = encode(&P,origin_sentense,&char,&length);
+	println!("送信語:{:?}",u.toVec());
 
 	// 送信でエラーを起こす
-	//let mut u_received = u.toVec();
-	let mut u_received = vec![5,9,0,9,0,1,0,7,0,5];
+	let mut u_received = u.toVec();
+	//u_received[0] += 1;
+	u_received[1] += 1;
 	
 
+	// 受信語
 	let u_received = FiniteField::new(char, length, u_received.into_iter().map(|x|PrimeField::new(char,x as i32)).collect());
+	println!("受信語: {:?}",u_received.toVec());
 	
 	// シンドローム
 	/*
 	let mut S:Vec<PrimeField> = Vec::new();
 	for i in 1..n-k{
-		S.push(function(&P[i as usize], &u_received, &char, &n));
-	}
+	S.push(function(&P[i as usize], &u_received, &char, &n));
+}
 	println!("S:{:?}",S);
 	 */	
 
@@ -198,8 +215,9 @@ fn main() {
 		
 	}
 
+
 	// 復号行列を掃き出し法で変形
-	for i in 0..n{
+	for i in 0..n-1{
 		// 0の場合は交換
 		for j in i..n{
 			if H[i as usize][i as usize].num != 0{
@@ -212,27 +230,34 @@ fn main() {
 			}
 		}
 		// 1になるように掛ける
+
+		let head = &H[i as usize][i as usize].clone();
 		for j in 0..l_0+l_1+2{
 
-			let mut head = &H[i as usize][i as usize];
-			let mut h_ij = &H[i as usize][j as usize];
+			let h_ij = &H[i as usize][j as usize];
 			H[i as usize][j as usize] = h_ij.div(&head);
+
+		}
+		let mut h_xi:Vec<PrimeField> = Vec::new();
+		for k in 0..n{
+			h_xi.push(H[k as usize][i as usize].clone());
 		}
 		// 0になるように引く
 		for j in 0..l_0+l_1+2{
+			// k列全ての値を取得する
+			let h_ij = &H[i as usize][j as usize].clone();
 			for k in 0..n{
-				if k == i{
+				if i == k{
 					continue;
 				}
-				let mut h_kj = &H[k as usize][j as usize];
-				let mut h_ki = &H[k as usize][i as usize];
-				let mut h_ij = &H[i as usize][j as usize];
-				H[k as usize][j as usize] = h_kj.sub(&h_ki.mul(&h_ij));
 
-				
+				let h_kj = &H[k as usize][j as usize];
+				let h_ki = h_xi[k as usize].clone();
+				H[k as usize][j as usize] = h_kj.sub(&h_ki.mul(&h_ij));
 			}
 
 		}
+
 	}
 
 	// 行列のランク
@@ -240,13 +265,13 @@ fn main() {
 	for i in 0..n{
 		if H[i as usize][i as usize].num != 0{
 			rank += 1;
-			}
+		}
 	}
 
 	// 非零解の１つを求める
 	let mut Q:Vec<PrimeField> = Vec::new();
 	for i in 0..rank{
-		let mut temp = H[i as usize][rank..].to_vec();
+		let temp = H[i as usize][rank..].to_vec();
 		let mut answer = PrimeField::new(char,0);
 		for j in 0..temp.len(){
 
@@ -254,7 +279,7 @@ fn main() {
 		}
 		Q.push(answer);
 	}
-	for i in rank..(l_0+l_1+2) as usize{
+	for _i in rank..(l_0+l_1+2) as usize{
 		Q.push(PrimeField::new(char,1));
 	}
 
@@ -265,7 +290,7 @@ fn main() {
 
 	// 次数の調整
 	let mut Q0_temp = Q_num[0..(l_0+1) as usize].to_vec().into_iter().rev().collect::<Vec<PrimeField>>();
-	for i in 0..(l_0+1) as usize{
+	for _i in 0..(l_0+1) as usize{
 		if Q0_temp[0].num == 0{
 			Q0_temp.remove(0);
 		}
@@ -275,7 +300,7 @@ fn main() {
 	}
 
 	let mut Q1_temp = Q_num[(l_0+1) as usize ..(l_0+l_1+2) as usize].to_vec().into_iter().rev().collect::<Vec<PrimeField>>();
-	for i in 0..(l_1+1) as usize{
+	for _i in 0..(l_1+1) as usize{
 		if Q1_temp[0].num == 0{
 			Q1_temp.remove(0);
 		}
@@ -285,28 +310,14 @@ fn main() {
 	}
 
 	let mut Q0 = FiniteField::new(char,length,Q0_temp);
-	let mut Q1 = FiniteField::new(char,length,Q_num[(l_0+1) as usize ..(l_0+l_1+2) as usize].to_vec().into_iter().rev().collect::<Vec<PrimeField>>());
-	// let mut Q0 = FiniteField::new(char,7,
-	// 							  vec![PrimeField::new(char,1),
-	// 							   PrimeField::new(char,9),
-	// 							   PrimeField::new(char,2),
-	// 								   PrimeField::new(char,2),
-	// 							   PrimeField::new(char,2),
-	// 							   PrimeField::new(char,1),
-	// 							   PrimeField::new(char,4)]);
-	// let mut Q1 = FiniteField::new(char,3,
-	// 							  vec![PrimeField::new(char,10),
-	// 								   PrimeField::new(char,3),
-	// 								   PrimeField::new(char,7)]);
-
-
+	let Q1 = FiniteField::new(char,length,Q_num[(l_0+1) as usize ..(l_0+l_1+2) as usize].to_vec().into_iter().rev().collect::<Vec<PrimeField>>());
 
 
 	// Q0をQ1で割った商を求める
 	let mut quotient:Vec<PrimeField> = Vec::new();
 
 	for i in 0..Q0.elements.len() - Q1.elements.len()+1{
-		let mut tmp = Q0.elements[i].div(&Q1.elements[0]);
+		let tmp = Q0.elements[i].div(&Q1.elements[0]);
 		for j in 0..Q1.elements.len(){
 			Q0.elements[i+j] = Q0.elements[i+j].sub(&Q1.elements[j].mul(&tmp));
 		}
@@ -321,22 +332,18 @@ fn main() {
 
 
 	// 逆順にする
-	let mut quotient = quotient.into_iter().rev().collect::<Vec<PrimeField>>();
-	let mut quotient:FiniteField = FiniteField::new(char,length,quotient);
+	let quotient = quotient.into_iter().rev().collect::<Vec<PrimeField>>();
+	let quotient:FiniteField = FiniteField::new(char,length,quotient);
 
 	let mut decode_code:Vec<PrimeField> = Vec::new();
 	for i in 0..n{
-		let mut tmp = function(&P[i as usize],&quotient,&char,&(quotient.elements.len() as u8));
+		let tmp = function(&P[i as usize],&quotient,&char,&(quotient.elements.len() as u8));
 		decode_code.push(tmp);
 	}
 
 	
 	// 結果を表示
-	let Q0_num:Vec<u8> = Q0.toVec();
-	let quotient_num:Vec<u8> = quotient.toVec();
-	let mut decode_code_num:Vec<u8> = decode_code.iter().map(|x|x.num as u8).collect();
-	println!("quotient:{:?}",quotient_num);
-	println!("remainder:{:?}",Q0_num);
-	println!("decode_code:{:?}",decode_code_num);
+	let decode_code_num:Vec<u8> = decode_code.iter().map(|x|x.num as u8).collect();
+	println!("復号:{:?}",decode_code_num);
 }
 
