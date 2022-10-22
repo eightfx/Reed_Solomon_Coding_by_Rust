@@ -116,9 +116,10 @@ fn main() {
 
 
 	let mut P = Vec::new();
-	// 原始根を作成
+	// 原始根を１つ固定
 	let primitive_element:i32 = 2;
 	
+	// 原始根を生成
 	for i in 0..char-1{
 		P.push(PrimeField::new(char,primitive_element.pow(i.into())));
 	}
@@ -133,12 +134,28 @@ fn main() {
 
 	let u_received = FiniteField::new(char, length, u_received.into_iter().map(|x|PrimeField::new(char,x as i32)).collect());
 	
+	// シンドローム
+	/*
 	let mut S:Vec<PrimeField> = Vec::new();
 	for i in 1..n-k{
 		S.push(function(&P[i as usize], &u_received, &char, &n));
 	}
 	println!("S:{:?}",S);
-	
+	 */	
+
+	// 復号行列の作成
+	let mut H:Vec<Vec<PrimeField>> = Vec::new();
+	for i in 0..n{
+		let mut tmp:Vec<PrimeField> = Vec::new();
+		for j in 0..l_0+1{
+			tmp.push(P[i as usize].pow(j.into()));
+		}
+		for j in 0..l_1+1{
+			tmp.push(u_received.elements[i as usize].mul(&P[i as usize].pow(j.into())));
+		}
+		H.push(tmp);
+		
+	}
 
 	
 
