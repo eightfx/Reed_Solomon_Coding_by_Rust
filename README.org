@@ -38,14 +38,15 @@ Reed-Solomon符号は、データの送受信時にエラーが発生した場�
 
 $$ P \in \{\alpha_1, \ldots, \alpha_n\} \subset \mathbb{F}_q $$
 
-$$ L(m) : \mathbb{F}_q $$ を係数とする最大m次の1変数多項式からなる線形空間とする。
+$$ L(m) : \mathbb{F}_q を係数とする最大m次の1変数多項式からなる線形空間とする。$$
 
-ただし、実務上はPを $$ \mathbb{F}_q $$ の原始根の集合($$i.e. n = q - 1 $$)として扱うことが多い。
+$$ ただし、実務上はPを  \mathbb{F}_q  の原始根の集合(i.e. n = q - 1 )として扱うことが多い。$$
 
 n > mとする。
 
-$$ Ev :  L(m) \rightarrow L(n) : f \longmapsto (f(\alpha_1), \ldots , f(\alpha_n))$$ とする。
-この写像は単射で、像は次数mのReed-Solomon codeと呼ばれる $$ [n,m+1,n-m]_q -code $$となる。
+$$ Ev :  L(m) \rightarrow L(n) : f \longmapsto (f(\alpha_1), \ldots , f(\alpha_n)) とする。$$
+
+$$ この写像は単射で、像は次数mのReed-Solomon codeと呼ばれる  [n,m+1,n-m]_q -code となる。$$
 
 
 
