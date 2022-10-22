@@ -3,48 +3,48 @@ use rand::Rng;
 #[derive(Debug)]
 #[derive(Clone)]
 struct PrimeField{
-	char:u8,
-	num:i32
+	char:u16,
+	num:i64
 }
 impl PrimeField{
-	fn new(char:u8,num:i32)->PrimeField{
-		let new_num = num % char as i32;
+	fn new(char:u16,num:i64)->PrimeField{
+		let new_num = num % char as i64;
 		PrimeField{char:char,num:new_num}
 	}
 	fn add(&self,other:&PrimeField)->PrimeField{
-		PrimeField{char:self.char,num:(self.num+other.num) %self.char as i32}
+		PrimeField{char:self.char,num:(self.num+other.num) %self.char as i64}
 	}
 	fn sub(&self,other:&PrimeField)->PrimeField{
-		let mut minus_num = (self.num-other.num) %self.char as i32;
+		let mut minus_num = (self.num-other.num) %self.char as i64;
 		if minus_num < 0{
-			minus_num += self.char as i32;
+			minus_num += self.char as i64;
 		}
 		PrimeField{char:self.char,num:minus_num}
 	}
 	fn mul(&self,other:&PrimeField)->PrimeField{
-		let mut mul_num = (self.num*other.num) %self.char as i32;
+		let mut mul_num = (self.num*other.num) %self.char as i64;
 		if mul_num < 0{
-			mul_num += self.char as i32;
+			mul_num += self.char as i64;
 		}
 
 		PrimeField{char:self.char,num:mul_num}
 	}
-	fn pow(&self,other:i32)->PrimeField{
-		PrimeField{char:self.char,num:(self.num.pow(other as u32)) %self.char as i32}
+	fn pow(&self,other:i64)->PrimeField{
+		PrimeField{char:self.char,num:(self.num.pow(other as u32)) %self.char as i64}
 	}
 	fn div(&self,other:&PrimeField)->PrimeField{
-		let mut t = self.extended_euclidean(self.char as i32, other.num);
+		let mut t = self.extended_euclidean(self.char as i64, other.num);
 		if t<0{
 			let mut i = 1;
 			
-			while (t+i*self.char as i32) < 0{
+			while (t+i*self.char as i64) < 0{
 				i += 1;
 			}
-			t = (t+i*self.char as i32) % self.char as i32;
+			t = (t+i*self.char as i64) % self.char as i64;
 		}
-		PrimeField{char:self.char,num:(self.num*t) %self.char as i32}
+		PrimeField{char:self.char,num:(self.num*t) %self.char as i64}
 	}
-	fn extended_euclidean(&self,u: i32, v: i32) -> i32 {
+	fn extended_euclidean(&self,u: i64, v: i64) -> i64 {
 		let mut r0 = u;
 		let mut r1 = v;
 		let mut s0 = 1;
@@ -74,12 +74,12 @@ impl PrimeField{
 // 素体の有限拡大体
 #[derive(Debug)]
 struct FiniteField{
-	char:u8,
-	length:u8,
+	char:u16,
+	length:u16,
 	elements:Vec<PrimeField>
 }
 impl FiniteField{
-	fn new(char:u8, length:u8, elements:Vec<PrimeField>)->FiniteField{
+	fn new(char:u16, length:u16, elements:Vec<PrimeField>)->FiniteField{
 		FiniteField{char,length,elements}
 	}
 	fn add(&self,other:FiniteField)->FiniteField{
@@ -103,10 +103,10 @@ impl FiniteField{
 		}
 		FiniteField{char:self.char,length:self.length,elements:result}
 	}
-	fn toVec(&self)->Vec<u8>{
-		let mut result:Vec<u8> = Vec::new();
+	fn toVec(&self)->Vec<u16>{
+		let mut result:Vec<u16> = Vec::new();
 		for i in 0..self.elements.len(){
-			result.push(self.elements[i as usize].num as u8);
+			result.push(self.elements[i as usize].num as u16);
 		}
 		result
 	}
@@ -114,7 +114,7 @@ impl FiniteField{
 }
 
 // u係数のx変数多項式
-fn function(x:&PrimeField, u:&FiniteField, char:&u8, length:&u8) ->PrimeField{
+fn function(x:&PrimeField, u:&FiniteField, char:&u16, length:&u16) ->PrimeField{
 	let mut result = PrimeField{char:*char,num:0};
 	for i in 0..*length{
 		let tmp = &x.pow(i.into()).mul(&u.elements[i as usize]);
@@ -124,7 +124,7 @@ fn function(x:&PrimeField, u:&FiniteField, char:&u8, length:&u8) ->PrimeField{
 	result
 	
 }
-fn encode(P:&Vec<PrimeField>,origin_sentense:FiniteField, char:&u8, length:&u8)->FiniteField{
+fn encode(P:&Vec<PrimeField>,origin_sentense:FiniteField, char:&u16, length:&u16)->FiniteField{
 	let mut u = Vec::new();
 	for i in 0..char-1{
 		let temp = function(&P[i as usize], &origin_sentense, char, length);
@@ -134,10 +134,10 @@ fn encode(P:&Vec<PrimeField>,origin_sentense:FiniteField, char:&u8, length:&u8)-
 
 }
 
-fn matrix_visualize(matrix:&Vec<Vec<PrimeField>>,n:&u8, l_0:&u8,l_1:&u8)->Vec<Vec<i32>>{
-	let mut h_num:Vec<Vec<i32>> = Vec::new();
+fn matrix_visualize(matrix:&Vec<Vec<PrimeField>>,n:&u16, l_0:&u16,l_1:&u16)->Vec<Vec<i64>>{
+	let mut h_num:Vec<Vec<i64>> = Vec::new();
 	for i in 0..*n{
-		let mut tmp:Vec<i32> = Vec::new();
+		let mut tmp:Vec<i64> = Vec::new();
 		for j in 0..l_0+l_1+2{
 			tmp.push(matrix[i as usize][j as usize].num);
 		}
@@ -147,8 +147,8 @@ fn matrix_visualize(matrix:&Vec<Vec<PrimeField>>,n:&u8, l_0:&u8,l_1:&u8)->Vec<Ve
 }
 
 fn main() {
-	let char = 13; // n+1
-	let length =5;
+	let char = 17; // n+1
+	let length =8;
 
 	let n = &char-1; // 符号込の長さ
 	let k = &length; // 文章の長さ
@@ -157,11 +157,14 @@ fn main() {
 	
 	let l_0 = &n - 1 - &t;
 	let l_1 = &n - 1 - &t - (k - 1);
-	println!("[{},{},{}]-code",n,k,d,);
+	println!("[{},{},{}]-_{}code",n,k,d,char);
 
 	// 送りたい文章
 		let origin_sentense = FiniteField::new(char,length,
 											   vec![PrimeField::new(char,0),
+													PrimeField::new(char,0),
+													PrimeField::new(char,0),
+													PrimeField::new(char,0),
 													PrimeField::new(char,0),
 													PrimeField::new(char,0),
 													PrimeField::new(char,0),
@@ -171,7 +174,7 @@ fn main() {
 
 	let mut P = Vec::new();
 	// 原始根を１つ固定
-	let primitive_element:i32 = 3;
+	let primitive_element:i64 = 3;
 
 	// 原始根を生成
 	for i in 0..char-1{
@@ -184,12 +187,19 @@ fn main() {
 
 	// 送信でエラーを起こす
 	let mut u_received = u.toVec();
-	//u_received[0] += 1;
-	u_received[1] += 1;
+	let mut rng = rand::thread_rng();
+	let error_count = rng.gen_range(1,10);
+	println!("エラーの数:{}",error_count);
+	
+	for i in 0..error_count{
+		let error_position = rng.gen_range(0,n);
+		let error_value = rng.gen_range(0,char);
+		u_received[error_position as usize] = error_value;
+	}
 	
 
 	// 受信語
-	let u_received = FiniteField::new(char, length, u_received.into_iter().map(|x|PrimeField::new(char,x as i32)).collect());
+	let u_received = FiniteField::new(char, length, u_received.into_iter().map(|x|PrimeField::new(char,x as i64)).collect());
 	println!("受信語: {:?}",u_received.toVec());
 	
 	// シンドローム
@@ -335,15 +345,33 @@ fn main() {
 	let quotient = quotient.into_iter().rev().collect::<Vec<PrimeField>>();
 	let quotient:FiniteField = FiniteField::new(char,length,quotient);
 
+	let Q0_vec = Q0.toVec();
+	let mut Q0_remainder = 0;
+	for i in 0..Q0_vec.len(){
+		Q0_remainder += Q0_vec[i];
+		
+	}
+		
+	if Q0_remainder != 0{
+		println!("復号不可能");
+		std::process::exit(0);
+	}
 	let mut decode_code:Vec<PrimeField> = Vec::new();
 	for i in 0..n{
-		let tmp = function(&P[i as usize],&quotient,&char,&(quotient.elements.len() as u8));
+		let tmp = function(&P[i as usize],&quotient,&char,&(quotient.elements.len() as u16));
 		decode_code.push(tmp);
 	}
 
 	
 	// 結果を表示
-	let decode_code_num:Vec<u8> = decode_code.iter().map(|x|x.num as u8).collect();
+	let decode_code_num:Vec<u16> = decode_code.iter().map(|x|x.num as u16).collect();
 	println!("復号:{:?}",decode_code_num);
-}
+
+	if decode_code_num == u.toVec(){
+		println!("正解");
+	}
+	else{
+		println!("不正解");
+	}
+	}
 
