@@ -242,7 +242,6 @@ fn main() {
 		let mut temp = H[i as usize][rank..].to_vec();
 		let mut answer = PrimeField::new(char,0);
 		for j in 0..temp.len(){
-
 			answer = answer.sub(&temp[j as usize].mul(&PrimeField::new(char,1)));
 		}
 		Q.push(answer);
@@ -252,10 +251,21 @@ fn main() {
 	}
 
 
-	let H_num:Vec<Vec<i32>> = H.into_iter().map(|x|x.into_iter().map(|y|y.num).collect()).collect();
-	let Q_num:Vec<i32> = Q.into_iter().map(|x|x.num).collect();
-	println!("H:{:?}",H_num);
-	println!("Q:{:?}",Q_num);
+	let Q_num:Vec<PrimeField> = Q.iter().map(|x|PrimeField::new(char,x.num)).collect();
+
+	// 誤り位置多項式を求める
+	let Q0 = FiniteField::new(char,length,Q_num[0..(l_0+1) as usize].to_vec().into_iter().rev().collect::<Vec<PrimeField>>());
+	let Q1 = FiniteField::new(char,length,Q_num[(l_0+1) as usize ..(l_0+l_1+2) as usize].to_vec().into_iter().rev().collect::<Vec<PrimeField>>());
+	
+	
+
+	// Q0をQ1で割った商を求める
+	let mut Q0_div_Q1:Vec<PrimeField> = Vec::new();
+	let mut i = 0;
+
+	
+	println!("Q:{:?}",Q0);
+	println!("Q:{:?}",Q1);
 
 
 }
