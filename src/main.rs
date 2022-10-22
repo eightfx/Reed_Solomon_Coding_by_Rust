@@ -162,12 +162,12 @@ fn main() {
 	// 送りたい文章
 		let origin_sentense = FiniteField::new(char,length,
 											   vec![PrimeField::new(char,0),
-													PrimeField::new(char,0),
-													PrimeField::new(char,0),
-													PrimeField::new(char,0),
-													PrimeField::new(char,0),
-													PrimeField::new(char,0),
-													PrimeField::new(char,0),
+													PrimeField::new(char,16),
+													PrimeField::new(char,3),
+													PrimeField::new(char,7),
+													PrimeField::new(char,5),
+													PrimeField::new(char,8),
+													PrimeField::new(char,14),
 													PrimeField::new(char,1)]);
 	println!("送信したい文章: {:?}",origin_sentense.toVec());
 
