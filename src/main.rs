@@ -21,7 +21,12 @@ impl PrimeField{
 		PrimeField{char:self.char,num:minus_num}
 	}
 	fn mul(&self,other:&PrimeField)->PrimeField{
-		PrimeField{char:self.char,num:(self.num*other.num) %self.char as i32}
+		let mut mul_num = (self.num*other.num) %self.char as i32;
+		if mul_num < 0{
+			mul_num += self.char as i32;
+		}
+
+		PrimeField{char:self.char,num:mul_num}
 	}
 	fn pow(&self,other:i32)->PrimeField{
 		PrimeField{char:self.char,num:(self.num.pow(other as u32)) %self.char as i32}
@@ -276,18 +281,34 @@ fn main() {
 		}
 	}
 
-	let Q0 = FiniteField::new(char,length,Q0_temp);
-	let Q1 = FiniteField::new(char,length,Q_num[(l_0+1) as usize ..(l_0+l_1+2) as usize].to_vec().into_iter().rev().collect::<Vec<PrimeField>>());
-	
-	
+	let mut Q0 = FiniteField::new(char,length,Q0_temp);
+	let mut Q1 = FiniteField::new(char,length,Q_num[(l_0+1) as usize ..(l_0+l_1+2) as usize].to_vec().into_iter().rev().collect::<Vec<PrimeField>>());
+
 
 	// Q0をQ1で割った商を求める
-	let mut Q0_div_Q1:Vec<PrimeField> = Vec::new();
-	let mut i = 0;
+	let mut quotient:Vec<PrimeField> = Vec::new();
+
+	for i in 0..Q0.elements.len() - Q1.elements.len() + 1{
+		let mut tmp = Q0.elements[i].div(&Q1.elements[0]);
+		for j in 0..Q1.elements.len(){
+			Q0.elements[i+j] = Q0.elements[i+j].sub(&Q1.elements[j].mul(&tmp));
+		}
+
+		quotient.push(tmp);
+	}
+
+	// マイナスにする
+	for i in 0..quotient.len(){
+		quotient[i] = quotient[i].mul(&PrimeField::new(char,-1));
+	}
+
 
 	
-	println!("Q:{:?}",Q0);
-	println!("Q:{:?}",Q1);
+	let Q0_num:Vec<u8> = Q0.toVec();
+	let quotient_num:Vec<u8> = quotient.iter().map(|x|x.num as u8).collect();
+	
+	println!("quotient:{:?}",quotient_num);
+	println!("remainder:{:?}",Q0_num);
 
 
 }
