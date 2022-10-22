@@ -1,5 +1,6 @@
 // 素体
 #[derive(Debug)]
+#[derive(Clone)]
 struct PrimeField{
 	char:u8,
 	num:i32
@@ -192,9 +193,16 @@ fn main() {
 
 	// 復号行列を掃き出し法で変形
 	for i in 0..n{
-		// 0の場合はスキップ
-		if H[i as usize][i as usize].num == 0{
-			continue;
+		// 0の場合は交換
+		for j in i..n{
+			if H[i as usize][i as usize].num != 0{
+				break;
+			}
+			else{
+				let tmp = H[i as usize].clone();
+				H[i as usize] = H[j as usize].clone();
+				H[j as usize] = tmp;
+			}
 		}
 		// 1になるように掛ける
 		for j in 0..l_0+l_1+2{
@@ -220,28 +228,34 @@ fn main() {
 		}
 	}
 
-let H_num:Vec<Vec<i32>> = H.into_iter().map(|x|x.into_iter().map(|y|y.num).collect()).collect();
-	println!("H:{:?}",H_num);
-	//let mut h0 = &H[0][0];
-	//let mut h1 = &H[0][1];
-	//H[0][0] = h0.add(h1);
-	
-	
-	/*
+	// 行列のランク
+	let mut rank = 0;
 	for i in 0..n{
-	let mut head :&PrimeField = &H[i as usize][i as usize];
-		println!("head:{:?}",head);
-		for j in 0..n{
-			let mut tmp = &mut H[j as usize];
-			tmp[i as usize] = tmp[i as usize].div(&head);
-		}
-
+		if H[i as usize][i as usize].num != 0{
+			rank += 1;
+			}
 	}
-	 */
 
-	//println!("H:{:?}",H);
-	
+	// 非零解の１つを求める
+	let mut Q:Vec<PrimeField> = Vec::new();
+	for i in 0..rank{
+		let mut temp = H[i as usize][rank..].to_vec();
+		let mut answer = PrimeField::new(char,0);
+		for j in 0..temp.len(){
 
+			answer = answer.sub(&temp[j as usize].mul(&PrimeField::new(char,1)));
+		}
+		Q.push(answer);
+	}
+	for i in rank..(l_0+l_1+2) as usize{
+		Q.push(PrimeField::new(char,1));
+	}
+
+
+	let H_num:Vec<Vec<i32>> = H.into_iter().map(|x|x.into_iter().map(|y|y.num).collect()).collect();
+	let Q_num:Vec<i32> = Q.into_iter().map(|x|x.num).collect();
+	println!("H:{:?}",H_num);
+	println!("Q:{:?}",Q_num);
 
 
 }
