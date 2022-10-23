@@ -61,6 +61,7 @@ impl PrimeField {
             num: (self.num * t) % self.char as i64,
         }
     }
+	// ユークリッドの互除法
     fn extended_euclidean(&self, u: i64, v: i64) -> i64 {
         let mut r0 = u;
         let mut r1 = v;
@@ -191,35 +192,39 @@ fn sweep_method(mut H:Vec<Vec<PrimeField>>) -> Vec<Vec<PrimeField>>{
 	H
 }
 // u係数のx変数多項式
-fn function(x: &PrimeField, u: &FiniteField, char: &u16, length: &u16) -> PrimeField {
-    let mut result = PrimeField {
-        char: *char,
-        num: 0,
-    };
-    for i in 0..*length {
-        let tmp = &x.pow(i.into()).mul(&u.elements[i as usize]);
-        result = result.add(tmp);
-    }
-    result
+fn function(x: &PrimeField, u: &FiniteField, char: &u16) -> PrimeField {
+	let length = (u.toVec().len()) as usize;
+	let mut result = PrimeField {
+		char: *char,
+		num: 0,
+	};
+	for i in 0..length {
+		let tmp = &x.pow(i.try_into().unwrap()).mul(&u.elements[i as usize]);
+		result = result.add(tmp);
+	}
+	result
 }
-fn encode(
+
+// 符号化
+fn reed_solomon_encode(
     P: &Vec<PrimeField>,
     origin_sentense: FiniteField,
     char: &u16,
-    length: &u16,
 ) -> FiniteField {
-    let mut u = Vec::new();
+	let length = P.len();
+	let mut u = Vec::new();
     for i in 0..char - 1 {
-        let temp = function(&P[i as usize], &origin_sentense, char, length);
+        let temp = function(&P[i as usize], &origin_sentense, char);
         u.push(temp);
     }
     FiniteField {
         char: *char,
-        length: *length,
+        length: length as u16,
         elements: u,
     }
 }
 
+// 行列の各要素をPrimeFieldからi64に変換することでprintln!で見やすくする
 fn matrix_visualize(matrix: &Vec<Vec<PrimeField>>, n: &u16, l_0: &u16, l_1: &u16) -> Vec<Vec<i64>> {
     let mut h_num: Vec<Vec<i64>> = Vec::new();
     for i in 0..*n {
@@ -236,7 +241,7 @@ fn main() {
     let char = 17; // n+1
     let length = 8;
 
-    let n = &char - 1; // 符号込の長さ
+    le n = &char - 1; // 符号込の長さ
     let k = &length; // 文章の長さ
     let d = n - k + 1; // 最小距離
     let t = (n - k) / 2;
@@ -272,7 +277,7 @@ fn main() {
     }
     P = FiniteField::new(char, length, P).elements;
     // 符号化
-    let u = encode(&P, origin_sentense, &char, &length);
+    let u = reed_solomon_encode(&P, origin_sentense, &char);
     println!("送信語:{:?}", u.toVec());
 
     // 送信でエラーを起こす
@@ -425,7 +430,6 @@ fn main() {
             &P[i as usize],
             &quotient,
             &char,
-            &(quotient.elements.len() as u16),
         );
         decode_code.push(tmp);
     }
