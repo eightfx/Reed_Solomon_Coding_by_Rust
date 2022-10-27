@@ -39,6 +39,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a06f77d526c1a601b7c4cdd98f54b5eaabffc14d5f2f0296febdc7f357c6d3ba"
 
 [[package]]
+name = "galois_field"
+version = "0.1.6"
+
+[[package]]
 name = "libc"
 version = "0.2.135"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -163,6 +167,7 @@ dependencies = [
 name = "reed_solomon"
 version = "0.1.0"
 dependencies = [
+ "galois_field",
  "rand",
 ]
 

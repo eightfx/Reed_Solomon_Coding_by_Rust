@@ -1,456 +1,242 @@
 use rand::Rng;
-// 素体
-#[derive(Debug, Clone)]
-struct PrimeField {
-    char: u16,
-    num: i64,
-}
-impl PrimeField {
-    fn new(char: u16, num: i64) -> PrimeField {
-        let new_num = num % char as i64;
-        PrimeField { char, num: new_num }
-    }
-    fn add(&self, other: &PrimeField) -> PrimeField {
-        PrimeField {
-            char: self.char,
-            num: (self.num + other.num) % self.char as i64,
-        }
-    }
-    fn sub(&self, other: &PrimeField) -> PrimeField {
-        let mut minus_num = (self.num - other.num) % self.char as i64;
-        if minus_num < 0 {
-            minus_num += self.char as i64;
-        }
-        PrimeField {
-            char: self.char,
-            num: minus_num,
-        }
-    }
-    fn mul(&self, other: &PrimeField) -> PrimeField {
-        let mut mul_num = (self.num * other.num) % self.char as i64;
-        if mul_num < 0 {
-            mul_num += self.char as i64;
-        }
+use galois_field::*;
 
-        PrimeField {
-            char: self.char,
-            num: mul_num,
-        }
-    }
-    fn pow(&self, other: i64) -> PrimeField {
-        PrimeField {
-            char: self.char,
-            num: (self.num.pow(other as u32)) % self.char as i64,
-        }
-    }
-    fn div(&self, other: &PrimeField) -> PrimeField {
-        let mut t = self.extended_euclidean(self.char as i64, other.num);
-        if t < 0 {
-            let mut i = 1;
-
-            while (t + i * self.char as i64) < 0 {
-                i += 1;
-            }
-            t = (t + i * self.char as i64) % self.char as i64;
-        }
-        PrimeField {
-            char: self.char,
-            num: (self.num * t) % self.char as i64,
-        }
-    }
-    // ユークリッドの互除法
-    fn extended_euclidean(&self, u: i64, v: i64) -> i64 {
-        let mut r0 = u;
-        let mut r1 = v;
-        let mut s0 = 1;
-        let mut s1 = 0;
-        let mut t0 = 0;
-        let mut t1 = 1;
-        while r1 != 0 {
-            let q = r0 / r1;
-            let r = r0 - q * r1;
-            let s = s0 - q * s1;
-            let t = t0 - q * t1;
-            r0 = r1;
-            s0 = s1;
-            t0 = t1;
-            r1 = r;
-            s1 = s;
-            t1 = t;
-        }
-        if t0 < 0 {
-            t0 + u
-        } else {
-            t0
-        }
-    }
-}
-
-// 素体の有限拡大体
-#[derive(Debug)]
-struct FiniteField {
-    char: u16,
-    elements: Vec<PrimeField>,
-}
-impl FiniteField {
-    fn new(char: u16, elements: Vec<PrimeField>) -> FiniteField {
-        FiniteField { char, elements }
-    }
-    fn add(&self, other: FiniteField) -> FiniteField {
-        let mut result: Vec<PrimeField> = Vec::new();
-        let length = self.elements.len();
-        for i in 0..length {
-            result.push(self.elements[i as usize].add(&other.elements[i as usize]));
-        }
-        FiniteField {
-            char: self.char,
-            elements: result,
-        }
-    }
-    fn sub(&self, other: FiniteField) -> FiniteField {
-        let mut result: Vec<PrimeField> = Vec::new();
-        let length = self.elements.len();
-        for i in 0..length {
-            result.push(self.elements[i as usize].sub(&other.elements[i as usize]));
-        }
-        FiniteField {
-            char: self.char,
-            elements: result,
-        }
-    }
-    fn mul(&self, other: FiniteField) -> FiniteField {
-        let mut result: Vec<PrimeField> = Vec::new();
-
-        let length = self.elements.len();
-        for i in 0..length {
-            result.push(self.elements[i as usize].mul(&other.elements[i as usize]));
-        }
-        FiniteField {
-            char: self.char,
-            elements: result,
-        }
-    }
-    fn toVec(&self) -> Vec<u16> {
-        let mut result: Vec<u16> = Vec::new();
-
-        let length = self.elements.len();
-        for i in 0..length {
-            result.push(self.elements[i as usize].num as u16);
-        }
-        result
-    }
-}
-
-// 掃き出し法
-fn sweep_method(mut H: Vec<Vec<PrimeField>>) -> Vec<Vec<PrimeField>> {
-    let n = H.len();
-    let m = H[0].len();
-
-    // 復号行列を掃き出し法で変形
-    for i in 0..n - 1 {
-        // 0の場合は交換
-        for j in i..n {
-            if H[i as usize][i as usize].num != 0 {
-                break;
-            } else {
-                let tmp = H[i as usize].clone();
-                H[i as usize] = H[j as usize].clone();
-                H[j as usize] = tmp;
-            }
-        }
-        // 1になるように掛ける
-
-        let head = &H[i as usize][i as usize].clone();
-        for j in 0..m {
-            let h_ij = &H[i as usize][j as usize];
-            H[i as usize][j as usize] = h_ij.div(head);
-        }
-        let mut h_xi: Vec<PrimeField> = Vec::new();
-        for k in 0..n {
-            h_xi.push(H[k as usize][i as usize].clone());
-        }
-        // 0になるように引く
-        for j in 0..m {
-            // k列全ての値を取得する
-            let h_ij = &H[i as usize][j as usize].clone();
-            for k in 0..n {
-                if i == k {
-                    continue;
-                }
-
-                let h_kj = &H[k as usize][j as usize];
-                let h_ki = h_xi[k as usize].clone();
-                H[k as usize][j as usize] = h_kj.sub(&h_ki.mul(h_ij));
-            }
-        }
-    }
-    H
-}
-// u係数のx変数多項式
-fn function(x: &PrimeField, u: &FiniteField, char: &u16) -> PrimeField {
-    let length = (u.toVec().len()) as usize;
-    let mut result = PrimeField {
-        char: *char,
-        num: 0,
-    };
-    for i in 0..length {
-        let tmp = &x.pow(i.try_into().unwrap()).mul(&u.elements[i as usize]);
-        result = result.add(tmp);
-    }
-    result
-}
-
-// 符号化
-fn reed_solomon_encode(
-    P: &Vec<PrimeField>,
-    origin_sentense: FiniteField,
-    char: &u16,
-) -> FiniteField {
-    let length = P.len();
-    let mut u = Vec::new();
-    for i in 0..char - 1 {
-        let temp = function(&P[i as usize], &origin_sentense, char);
-        u.push(temp);
-    }
-    FiniteField {
-        char: *char,
-        elements: u,
-    }
-}
-
-// FiniteFieldにランダムにエラーを入れる
-fn send_message_with_error(u: &FiniteField, char: &u16) -> FiniteField {
-    let mut u_received = u.toVec();
-	let n = u_received.len();
-	
-	let mut rng = rand::thread_rng();
-    let error_count = rng.gen_range(1, 10);
-
-    for _i in 0..error_count {
-        let error_position = rng.gen_range(0, n);
-        let error_value = rng.gen_range(0, char);
-        u_received[error_position as usize] = error_value;
-    }
-
-    // 受信語
-    let u_received = FiniteField::new(
-        *char,
-        u_received
-            .into_iter()
-            .map(|x| PrimeField::new(*char, x as i64))
-            .collect(),
-    );
-	u_received
-
-	
-}
-
-// 復号方法その１
-fn decode(Q: &Vec<PrimeField>, char: &u16, P:Vec<PrimeField>, l_0: &u16) -> (Vec<PrimeField>, bool) {
-    let Q_num: Vec<PrimeField> = Q.iter().map(|x| PrimeField::new(*char, x.num)).collect();
-
-    // 誤り位置多項式を求める
-
-    // 次数の調整
-    let mut Q0_temp = Q_num[0..(l_0 + 1) as usize]
-        .to_vec()
-        .into_iter()
-        .rev()
-        .collect::<Vec<PrimeField>>();
-    for _i in 0..(l_0 + 1) as usize {
-        if Q0_temp[0].num == 0 {
-            Q0_temp.remove(0);
-        } else {
-            break;
-        }
-    }
-
-    let mut Q1_temp = Q_num[(l_0 + 1) as usize..]
-		.to_vec()
-		.into_iter()
-		.rev()
-		.collect::<Vec<PrimeField>>();
-	for _i in 0..Q1_temp.len() {
-		if Q1_temp[0].num == 0 {
-			Q1_temp.remove(0);
-		} else {
-			break;
+fn hamming_distance(f:Polynomial, g:Polynomial) -> u32{
+	let mut distance = 0;
+	for i in 0..f.coef.len(){
+		if !(f.coef[i].clone()-g.coef[i].clone()).is_0(){
+			distance += 1;
 		}
 	}
-
-    let mut Q0 = FiniteField::new(*char, Q0_temp);
-    let Q1 = FiniteField::new(
-        *char,
-        Q_num[(l_0 + 1) as usize..]
-            .to_vec()
-            .into_iter()
-            .rev()
-            .collect::<Vec<PrimeField>>(),
-    );
-
-    // Q0をQ1で割った商を求める
-    let mut quotient: Vec<PrimeField> = Vec::new();
-
-    for i in 0..Q0.elements.len() - Q1.elements.len() + 1 {
-        let tmp = Q0.elements[i].div(&Q1.elements[0]);
-        for j in 0..Q1.elements.len() {
-            Q0.elements[i + j] = Q0.elements[i + j].sub(&Q1.elements[j].mul(&tmp));
-        }
-
-        quotient.push(tmp);
-    }
-
-    // マイナスにする
-    for i in 0..quotient.len() {
-        quotient[i] = quotient[i].mul(&PrimeField::new(*char, -1));
-    }
-
-    // 逆順にする
-    let quotient = quotient.into_iter().rev().collect::<Vec<PrimeField>>();
-    let quotient: FiniteField = FiniteField::new(*char, quotient);
-
-    let Q0_vec = Q0.toVec();
-    let mut Q0_remainder = 0;
-    for i in 0..Q0_vec.len() {
-        Q0_remainder += Q0_vec[i];
-    }
-
-	let decodable_flag = if Q0_remainder == 0 {true} else {false};
-    let mut decode_code: Vec<PrimeField> = Vec::new();
-	let n = P.len();
+	distance
 	
-	for i in 0..n {
-		let tmp = function(&P[i as usize], &quotient, &char);
-		decode_code.push(tmp);
-	}
-
-	(decode_code, decodable_flag)
-
-		
 }
+fn poly_to_string(poly:Polynomial) -> String {
+	let mut s = String::new();
+	for i in 0..poly.coef.len() {
+		let mut temp = 0;
+		if let Element::PrimeField{element:e}= poly.coef[i].element{
+			temp = e;
+		}
+		s = s + &temp.to_string();
 
+	}
+	s
+}
 // 行列の各要素をPrimeFieldからi64に変換することでprintln!で見やすくする
-fn matrix_visualize(matrix: &Vec<Vec<PrimeField>>, n: &u16, l_0: &u16, l_1: &u16) -> Vec<Vec<i64>> {
+fn matrix_visualize(matrix: Matrix) -> Vec<Vec<i64>> {
     let mut h_num: Vec<Vec<i64>> = Vec::new();
-    for i in 0..*n {
+    for i in 0..matrix.element.len() {
         let mut tmp: Vec<i64> = Vec::new();
-        for j in 0..l_0 + l_1 + 2 {
-            tmp.push(matrix[i as usize][j as usize].num);
-        }
+        for j in 0..matrix.element[0].len() {
+			if let Element::PrimeField{element:e} = matrix.element[i as usize][j as usize].element{
+				tmp.push(e as i64);
+			}
+			
+		}
         h_num.push(tmp);
     }
     h_num
 }
 
-fn main() {
-    // ここからパラメータ
+fn main(){
+	// メタパラメータ
+	let char:u32 = 7;
+	let length =2;
 
-    let char = 17; // 標数
-    let primitive_element: i64 = 3; // 原始根の１つ
-    let origin_sentense = FiniteField::new(
-        // 送りたい文章
-        char,
-        vec![
-            PrimeField::new(char, 0),
-            PrimeField::new(char, 16),
-            PrimeField::new(char, 3),
-            PrimeField::new(char, 7),
-            PrimeField::new(char, 5),
-            PrimeField::new(char, 8),
-            PrimeField::new(char, 14),
-            PrimeField::new(char, 1),
-        ],
-    );
-    println!("送信したい文章: {:?}", origin_sentense.toVec());
 
-    // 各数値の計算
-    let length = (origin_sentense.toVec().len()) as u16;
-    let n = &char - 1; // 符号込の長さ
-    let k = &length; // 文章の長さ
-    let d = n - k + 1; // 最小距離
-    let t = (n - k) / 2; // エラーを訂正できる数
+	let mut rng = rand::thread_rng();
 
-    let l_0 = &n - 1 - &t;
-    let l_1 = &n - 1 - &t - (k - 1);
-    println!("[{},{},{}]-_{}code", n, k, d, char);
+	// 文章のランダム生成
+	let mut sentence:Polynomial = Polynomial{
+		coef : Vec::new(),
+	};
+	let mut sentence_str:String = String::new();
+	for _ in 0..length{
+		let num:i32 = rng.gen_range(0, char as i32);
+		let element = FiniteField{
+			char:char,
+			element: Element::PrimeField { element: num.clone() }
+		};
+		
+		sentence.coef.push(element);
+		sentence_str.push_str(&num.to_string());
+	}
 
-    // 原始根から巡回群を作成
-    let mut P = Vec::new();
-    for i in 0..char - 1 {
-        P.push(PrimeField::new(char, primitive_element.pow(i.into())));
-    }
-    P = FiniteField::new(char, P).elements;
-    // 符号化
-    let u = reed_solomon_encode(&P, origin_sentense, &char);
-    println!("送信語:{:?}", u.toVec());
 
-    // 送信でエラーを起こす
-	let u_received = send_message_with_error(&u,&char);
-	println!("受信語: {:?}", u_received.toVec());
-
-    // シンドローム
-    /*
-    let mut S:Vec<PrimeField> = Vec::new();
-    for i in 1..n-k{
-    S.push(function(&P[i as usize], &u_received, &char, &n));
-}
-    println!("S:{:?}",S);
-     */
-
-    // 復号行列の作成
-    let mut H: Vec<Vec<PrimeField>> = Vec::new();
-    for i in 0..n {
-        let mut tmp: Vec<PrimeField> = Vec::new();
-        for j in 0..l_0 + 1 {
-            tmp.push(P[i as usize].pow(j.into()));
-        }
-        for j in 0..l_1 + 1 {
-            tmp.push(u_received.elements[i as usize].mul(&P[i as usize].pow(j.into())));
-        }
-        H.push(tmp);
-    }
-
-    // 掃き出し法
-    H = sweep_method(H);
-
-    // 行列のランク
-    let mut rank = 0;
-    for i in 0..n {
-        if H[i as usize][i as usize].num != 0 {
-            rank += 1;
-        }
-    }
-
-    // 非零解の１つを求める
-    let mut Q: Vec<PrimeField> = Vec::new();
-    for i in 0..rank {
-        let temp = H[i as usize][rank..].to_vec();
-        let mut answer = PrimeField::new(char, 0);
-        for j in 0..temp.len() {
-            answer = answer.sub(&temp[j as usize].mul(&PrimeField::new(char, 1)));
-        }
-        Q.push(answer);
-    }
-    for _i in rank..(l_0 + l_1 + 2) as usize {
-        Q.push(PrimeField::new(char, 1));
-    }
-
-	// 復号化
-	let (decode_code, decodable_flag) = decode(&Q,&char,P,&l_0);
+	// 原始根を１つ固定
+    let mut primitive_element:FiniteField = FiniteField{
+		char:char,
+		element: Element::PrimeField { element: 3 }
+	};
+	let origin_pe = primitive_element.clone();
+	// 原始根から巡回群を作成
+	let mut P_vec:Vec<FiniteField> = Vec::new();
+	for i in 0..char - 1 {
+		P_vec.push(primitive_element.clone());
+		primitive_element = primitive_element * origin_pe.clone();
+	}
+	let P:Polynomial = Polynomial{
+		coef:P_vec
+	};
+	println!("P:{}",poly_to_string(P.clone()));
 	
+	// 各数値の計算
+	let n = P.coef.len(); // 符号長
+	let k = length.clone(); // 文章の長さ
+	let d = n - k + 1; // 最小距離
+	let t = (n-k)/2; // エラー訂正能力
+	let l_0 = n.clone() - 1 - t.clone();
+	let l_1 = n.clone() - 1 - t.clone() - (k.clone() - 1);
+	println!("t:{}",t);
+	println!("l_0 = {}", l_0);
+	println!("l_1 = {}", l_1);
+	println!("[{},{},{}]-_{}code", n, k, d, char);
+	println!("sentence: {:?}", sentence_str);
 
-	if decodable_flag == false{
-		println!("復号不可能");
+	// リードソロモン符号の生成
+	let mut u:Polynomial = Polynomial{
+		coef:Vec::new()
+	};
+	for i in 0..n{
+		let temp = sentence.assign_value(P.coef[i].clone());
+		u.coef.push(temp);
+	}
+
+	// 可視化
+	let code = poly_to_string(u.clone());
+	println!("send: {:?}", code);
+
+	// エラーの生成
+
+	let mut u_received:Polynomial = u.clone();
+	let error_count = rng.gen_range(0,n);
+
+	for _ in 0..error_count{
+		let error_position = rng.gen_range(0,n);
+		let error_value = rng.gen_range(0,char);
+		u_received.coef[error_position] = FiniteField{
+			char:char,
+			element: Element::PrimeField { element: error_value as i32 }
+		};
+	}
+	// let mut error_distance = 0;
+	// for i in 0..u.coef.len(){
+	// 	let temp = u.coef[i].clone() - u_received.coef[i].clone();
+	// 	if let Element::PrimeField{element:e} = temp.element{
+	// 		error_distance += e
+	// 	}
+	// }
+	// println!("error_distance:{}",error_distance);
+
+	// 可視化
+	let received_code = poly_to_string(u_received.clone());
+	println!("received: {:?}", received_code);
+	
+	
+	// 復号行列の作成
+	let mut H:Matrix = Matrix{
+		element:Vec::new()
+	};
+	for i in 0..n{
+		let mut tmp: Vec<FiniteField> = Vec::new();
+		let mut P_i = P.coef[i].clone();
+		let mut origin_P_i = P.coef[i].clone();
+		for j in 0..l_0 + 1{
+			if j == 0{
+				tmp.push(P.coef[i].get_1());
+			}else{
+				tmp.push(P_i.clone());
+				P_i = P_i * origin_P_i.clone();
+			}
+		}
+		let mut P_i = P.coef[i].clone();
+		let mut origin_P_i = P.coef[i].clone();
+		for j in 0..l_1 + 1{
+			if j == 0{
+				tmp.push(u_received.coef[i].clone());
+			}else{
+				tmp.push(u_received.coef[i].clone() * P_i.clone());
+				P_i = P_i * origin_P_i.clone();
+			}
+		}
+		H.element.push(tmp);
+	}
+
+	
+	H = H.sweep_method();
+
+	// 行列のランク
+	let mut rank = 0;
+	for i in 0..n {
+		if !H.element[i as usize][i as usize].is_0() {
+			rank += 1;
+		}
+	}
+
+	let mut Q:Polynomial = Polynomial{
+		coef:Vec::new()
+	};
+	for i in 0..rank{
+		let temp = H.element[i][rank..].to_vec();
+		let mut answer = H.element[0][0].get_0();
+		for j in 0..temp.len(){
+			answer = answer - temp[j].clone();
+		}
+		Q.coef.push(answer);
+	}
+	for _ in rank..(l_0+l_1+2){
+		Q.coef.push(H.element[0][0].get_1().clone());
+	}
+	println!("Q: {:?}", poly_to_string(Q.clone()));
+
+	let mut Q0:Polynomial = Polynomial{
+		coef:Q.coef[0..l_0+1].to_vec()
+	};
+	let mut Q1:Polynomial = Polynomial{
+		coef:Q.coef[l_0+1..].to_vec()
+	};
+
+	println!("Q0: {:?}", poly_to_string(Q0.clone()));
+	println!("Q1: {:?}", poly_to_string(Q1.clone()));
+	let mut quotient = Q0.clone() / Q1.clone();
+	let remainder = Q0.clone() % Q1.clone();
+	println!("quotient: {:?}", poly_to_string(quotient.clone()));
+	println!("remainder: {:?}", poly_to_string(remainder.clone()));
+	for i in 0..quotient.coef.len(){
+		quotient.coef[i] = -quotient.coef[i].clone();
+	}
+	// 復号可能か調べる : 余りが０なら復号可能
+	let mut decodable_flag:bool = true;
+	for i in 0..remainder.coef.len(){
+		if !remainder.coef[i].is_0(){
+			decodable_flag = false;
+			break;
+		}
+	}
+
+	let mut decode_sentence:Polynomial = Polynomial{
+		coef:Vec::new()};
+
+	for i in 0..n{
+		decode_sentence.coef.push(quotient.assign_value(P.coef[i].clone()));
+	}
+
+	let distance = hamming_distance(decode_sentence.clone(),u_received.clone());
+	println!("distance: {}", distance);
+	if (decodable_flag == false) || (distance > (t as u32)){
+		println!("復元不可能");
 		std::process::exit(0);
 	}
 
-    // 結果を表示
-    let decode_code_num: Vec<u16> = decode_code.iter().map(|x| x.num as u16).collect();
-    println!("復号:{:?}", decode_code_num);
 
-    if decode_code_num == u.toVec() {
-        println!("正解");
-    } else {
-        println!("不正解");
-    }
+
+	let decode_sentence_str = poly_to_string(decode_sentence.clone());
+	println!("decode: {:?}", decode_sentence_str);
+	if poly_to_string(u) == decode_sentence_str{
+		println!("成功");
+	}
+	else{
+		println!("失敗");
+	}
 }
