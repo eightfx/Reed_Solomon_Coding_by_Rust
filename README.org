@@ -34,6 +34,10 @@ Reed-Solomon符号は、データの送受信時にエラーが発生した場�
 復号不可能
  #+end_src
 
+*  使用しているクレート
+自作したgalois_fieldクレートを使用しています。
+詳細はこちら
+https://crates.io/crates/galois_field
 * 理論的背景
 
 $$ P = \{\alpha_1, \ldots, \alpha_n\} \subset \mathbb{F}_q $$
