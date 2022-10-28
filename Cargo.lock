@@ -40,7 +40,9 @@ checksum = "a06f77d526c1a601b7c4cdd98f54b5eaabffc14d5f2f0296febdc7f357c6d3ba"
 
 [[package]]
 name = "galois_field"
-version = "0.1.6"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0899772ad9b608d214b4b9438f3475c478bffabc0a96e982a89b0028527c81ff"
 
 [[package]]
 name = "libc"

@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 rand = "0.6"
-galois_field = {path = "../galois_field"}
+galois_field = "0.1.9"

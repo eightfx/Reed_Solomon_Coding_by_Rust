@@ -42,7 +42,7 @@ fn matrix_visualize(matrix: Matrix) -> Vec<Vec<i64>> {
 fn main(){
 	// メタパラメータ
 	let char:u32 = 7;
-	let length =2;
+	let length =3;
 
 
 	let mut rng = rand::thread_rng();
@@ -53,7 +53,7 @@ fn main(){
 	};
 	let mut sentence_str:String = String::new();
 	for _ in 0..length{
-		let num:i32 = rng.gen_range(0, char as i32);
+		let num:i64 = rng.gen_range(0, char as i64);
 		let element = FiniteField{
 			char:char,
 			element: Element::PrimeField { element: num.clone() }
@@ -117,7 +117,7 @@ fn main(){
 		let error_value = rng.gen_range(0,char);
 		u_received.coef[error_position] = FiniteField{
 			char:char,
-			element: Element::PrimeField { element: error_value as i32 }
+			element: Element::PrimeField { element: error_value as i64 }
 		};
 	}
 	// let mut error_distance = 0;
